@@ -1,62 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Head from 'next/head';
+import { GetStaticProps } from 'next';
 import Header from '@/components/layout/Header';
 import UserCard from '@/components/common/UserCard';
 import { UserProps } from '@/interfaces';
 
-const Users: React.FC = () => {
-  const [users, setUsers] = useState<UserProps[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface UsersPageProps {
+  users: UserProps[];
+  error?: string;
+}
 
-  // Fetch users from JSONPlaceholder API
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('https://jsonplaceholder.typicode.com/users');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-        
-        const data: UserProps[] = await response.json();
-        setUsers(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, []);
+const Users: React.FC<UsersPageProps> = ({ users, error }) => {
 
   // Loading component
-  const LoadingSpinner = () => (
-    <div className="flex justify-center items-center py-12">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-    </div>
-  );
-
-  // Error component
-  const ErrorMessage = ({ message }: { message: string }) => (
+const ErrorMessage = ({ message }: { message: string }) => (
     <div className="text-center py-12">
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
         <div className="text-red-600 text-2xl mb-2">⚠️</div>
         <h3 className="text-red-800 font-semibold mb-2">Error Loading Users</h3>
         <p className="text-red-600">{message}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-        >
-          Retry
-        </button>
       </div>
     </div>
   );
-
-  return (
+return (
     <>
       <Head>
         <title>Users - Next.js Project</title>
@@ -103,11 +69,7 @@ const Users: React.FC = () => {
           </div>
 
           {/* Content */}
-          {loading && <LoadingSpinner />}
-          
-          {error && <ErrorMessage message={error} />}
-          
-          {!loading && !error && users.length > 0 && (
+          {(!error && users.length > 0) ? (
             <>
               {/* Users Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -171,38 +133,66 @@ const Users: React.FC = () => {
                           const domain = user.email.split('@')[1];
                           acc[domain] = (acc[domain] || 0) + 1;
                           return acc;
-                        }, {} as Record<string, number>)
-                      } && Object.entries(
-                        users.reduce((acc, user) => {
-                          const domain = user.email.split('@')[1];
-                          acc[domain] = (acc[domain] || 0) + 1;
-                          return acc;
-                        }, {} as Record<string, number>)
-                      ).sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A'
-                    </p>
-                  </div>
-                  <div className="bg-white bg-opacity-20 rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">🏢 Company Catchphrases</h3>
-                    <p className="text-sm opacity-90">
-                      Each user's company has a unique catchphrase that describes their business philosophy!
-                    </p>
-                  </div>
+                        }, {} as Record<string, number>){" "}&& Object.entries(
+                          users.reduce((acc, user) => {
+                            const domain = user.email.split('@')[1];
+                            acc[domain] = (acc[domain] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>){" "}.sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A'
+                    }
+                  </p>
+                </div>
+                <div className="bg-white bg-opacity-20 rounded-lg p-4">
+                  <h3 className="font-semibold mb-2">🏢 Company Catchphrases</h3>
+                  <p className="text-sm opacity-90">
+                    Each user's company has a unique catchphrase that describes their business philosophy!
+                  </p>
                 </div>
               </div>
-            </>
-          )}
-
-          {!loading && !error && users.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">👤</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Users Found</h3>
-              <p className="text-gray-500">No users were retrieved from the API.</p>
             </div>
+          </>
+          ) : (
+            <ErrorMessage message={error || 'No users to display'} />
           )}
         </div>
       </main>
     </>
-  );
+);
+};
+
+// Static site generation with getStaticProps
+export const getStaticProps: GetStaticProps = async () => {
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/users');
+    
+    if (!response.ok) {
+      return {
+        props: {
+          users: [],
+          error: 'Failed to fetch users'
+        }
+      };
+    }
+    
+    const users: UserProps[] = await response.json();
+    
+    return {
+      props: {
+        users
+      },
+      // Enable ISR - revalidate every 60 seconds
+      revalidate: 60
+    };
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    
+    return {
+      props: {
+        users: [],
+        error: 'Failed to fetch users'
+      }
+    };
+  }
 };
 
 export default Users;
