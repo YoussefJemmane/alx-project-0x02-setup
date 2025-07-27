@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
-import Header from '../components/layout/Header';
-import Card from '../components/common/Card';
-import PostModal from '../components/common/PostModal';
-import { PostFormData } from '../interfaces';
+import Header from '@/components/layout/Header';
+import Card from '@/components/common/Card';
+import PostModal from '@/components/common/PostModal';
+import { PostFormData } from '@/interfaces';
 
 const Home: React.FC = () => {
   const [posts, setPosts] = useState<PostFormData[]>([

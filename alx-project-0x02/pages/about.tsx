@@ -1,7 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
-import Header from '../components/layout/Header';
-import Button from '../components/common/Button';
+import Header from '@/components/layout/Header';
+import Button from '@/components/common/Button';
 
 const About: React.FC = () => {
   const handleButtonClick = (buttonType: string) => {

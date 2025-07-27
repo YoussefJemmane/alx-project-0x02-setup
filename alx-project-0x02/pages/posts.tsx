@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Header from '../components/layout/Header';
-import PostCard from '../components/common/PostCard';
-import { PostProps } from '../interfaces';
+import { GetStaticProps } from 'next';
+import Header from '@/components/layout/Header';
+import PostCard from '@/components/common/PostCard';
+import { PostProps } from '@/interfaces';
 
 const Posts: React.FC = () => {
   const [posts, setPosts] = useState<PostProps[]>([]);
@@ -161,6 +162,38 @@ const Posts: React.FC = () => {
       </main>
     </>
   );
+};
+
+// Static generation with getStaticProps for better performance
+export const getStaticProps: GetStaticProps = async () => {
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch posts');
+    }
+    
+    const posts: PostProps[] = await response.json();
+    
+    return {
+      props: {
+        initialPosts: posts.slice(0, 12), // Limit to first 12 posts
+      },
+      // Revalidate at most once every hour
+      revalidate: 3600,
+    };
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    
+    return {
+      props: {
+        initialPosts: [],
+        error: 'Failed to fetch posts',
+      },
+      // Try again in 60 seconds if there was an error
+      revalidate: 60,
+    };
+  }
 };
 
 export default Posts;
